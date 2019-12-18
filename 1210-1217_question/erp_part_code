@@ -1,0 +1,70 @@
+%% explore data
+
+
+%% load the data
+data = load_data(1);
+
+%% do the band-stop filter and biploar reference in the data
+cfg =[];
+cfg.bsfilter ='yes';
+cfg.bsfreq = [45 55];
+cfg.reref = 'yes';
+cfg.refmethod  = 'bipolar';
+cfg.demean ='yes';
+cfg.baselinewindow = [-0.5,-0];
+
+[data] = ft_preprocessing(cfg,data);
+
+data = check_bipolar(data); 
+
+%% get the conditions I wanted to plot, here is the stimulus is "thres" and the response type is "thresface" or "thresnoface"
+stimulus_value = [5 2 6];
+stimulus_type = {'facehouse','faceface','househouse'};
+
+response_value = [8 9];
+response_type = {'correct','incorrect'};
+
+cfg = [];
+
+cfg.trials = (data.trialinfo(:,1)==stimulus_value(1))&(data.trialinfo(:,2)==response_value(1));
+erp_fh_c = ft_timelockanalysis(cfg, data);
+
+cfg.trials = (data.trialinfo(:,1)==stimulus_value(2))&(data.trialinfo(:,2)==response_value(1));
+erp_ff_c = ft_timelockanalysis(cfg, data);
+
+cfg.trials = (data.trialinfo(:,1)==stimulus_value(3))&(data.trialinfo(:,2)==response_value(1));
+erp_hh_c = ft_timelockanalysis(cfg, data);
+
+%% plot the ERP for all electrodes using ft_mutiplotER
+cfg = [];
+cfg.layout= 'ordered';
+layout = ft_prepare_layout(cfg,data);
+close all
+cfg = [];
+cfg.showlabels = 'yes';
+cfg.fontsize = 8;
+cfg.layout =layout;
+% type = [];
+% for i = 1:numel(stimulus_type)-1
+%     type = [type,stimulus_type{i},','];
+% end
+% type = [type,stimulus_type{end}];
+cfg.linecolor = 'rgb';
+figure;
+%eval(['ft_multiplotER(cfg,',type,')']);
+ft_multiplotER(cfg,erp_fh_c,erp_ff_c,erp_hh_c); 
+legend({'facehouse';'faceface';'househouse'});
+
+%% plot the ERP for one electrode using ft_singleplotER
+cfg = [];
+cfg.showlabels = 'yes';
+cfg.channel = 13;  
+figure; 
+ft_singleplotER(cfg,erp_fh_c,erp_ff_c,erp_hh_c);hold on;
+legend({'facehouse';'faceface';'househouse'});
+
+ylim = get(gca,'Ylim');xlim = get(gca,'Xlim');
+line([0,0],ylim,'Color','k','LineStyle','--');hold on;
+line(xlim,[0,0],'Color','k','LineStyle','--');
+
+
